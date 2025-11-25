@@ -6,13 +6,13 @@
 splash_scene = new MiScene();
 
 splash_scene.preload = function () {
-    this.addImage('bg1', 'assets/images/splash/bg1.png');
-    this.addImage('bg2', 'assets/images/splash/bg2.png');
-    this.addImage('bg3', 'assets/images/splash/bg3.png');
-    this.addImage('bg4', 'assets/images/splash/bg4.png');
-    this.addImage('bg5', 'assets/images/splash/bg5.png');
-    this.addImage('creaturas', 'assets/images/splash/creaturas.png');
-    this.addImage('key_click', 'assets/images/splash/key_click.png');
+    this.loadImage('bg1', 'assets/images/splash/bg1.png');
+    this.loadImage('bg2', 'assets/images/splash/bg2.png');
+    this.loadImage('bg3', 'assets/images/splash/bg3.png');
+    this.loadImage('bg4', 'assets/images/splash/bg4.png');
+    this.loadImage('bg5', 'assets/images/splash/bg5.png');
+    this.loadImage('creaturas', 'assets/images/splash/creaturas.png');
+    this.loadImage('key_click', 'assets/images/splash/key_click.png');
 }
 
 splash_scene.create = function () {

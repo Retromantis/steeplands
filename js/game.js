@@ -6,9 +6,9 @@
 game_scene = new MiScene();
 
 game_scene.preload = function () {
-    this.addImage('bg', 'assets/images/game/bg.png');
-    this.addImage('player', 'assets/images/game/player.png');
-    this.addImage('plat3', 'assets/images/game/plat3.png');
+    this.loadImage('bg', 'assets/images/game/bg.png');
+    this.loadImage('player', 'assets/images/game/player.png');
+    this.loadImage('plat3', 'assets/images/game/plat3.png');
 }
 
 game_scene.create = function () {
@@ -22,24 +22,6 @@ game_scene.create = function () {
     this.anims[STATE_RUNNING | DIR_LEFT] = { frames: [4, 5], delay: 1, loop: true };
     this.anims[STATE_RUNNING | DIR_RIGHT] = { frames: [6, 7], delay: 1, loop: true };
 
-    this.player = new MiSprite(this.getImage('player'), 48, 48);
-    this.player.speed = 200;
-    this.player.speedX = 4;
-    // this.player.vx = CREATURAS_VX;
-    // this.player.isVisible = false;
-    this.player.update = function () {
-        this.animate();
-        this.move(this.vx, 0);
-
-        if (this.x < -this.width) {
-            this.position(GAME_WIDTH, this.y);
-        }
-        if (this.x > GAME_WIDTH) {
-            this.position(-this.width, this.y);
-        }
-    }
-    this.add(this.player);
-
     this.platforms = [
         { x: 148, y: 430, width: 64, height: 10 },
         { x: 76, y: 530, width: 192, height: 10 },
@@ -50,6 +32,56 @@ game_scene.create = function () {
         let spr = new MiSprite(this.getImage('plat3'), p.width, p.height);
         spr.position(p.x, p.y);
         this.add(spr);
+    }
+
+    this.player = new MiSprite(this.getImage('player'), 48, 48);
+    this.player.speed = 200;
+    this.player.speedX = 4;
+    this.player.update = this.player_update;
+    this.add(this.player);
+}
+
+game_scene.player_update = function () {
+    this.animate();
+
+    if (this.jumping) {
+        this.vy += this.gravity;
+        if (this.vy > 9) this.vy = 9;
+    }
+    this.move(this.vx, this.vy);
+
+    let onPlatform = false;
+
+    for (let p of game_scene.platforms) {
+
+        // ¿Está el personaje sobre esta plataforma?
+        let isAbovePlatform =
+            this.x + this.width > p.x &&
+            this.x < p.x + p.width &&
+            this.y + this.height <= p.y &&
+            this.y + this.height + this.vy >= p.y;
+
+        if (isAbovePlatform) {
+            // Detener la caída
+            this.jumping = false;
+            onPlatform = true;
+            this.vy = 0;
+            this.y = p.y - this.height;
+            this.position(this.x, this.y);
+            break;
+        }
+    }
+
+    // Si no está sobre ninguna plataforma, sigue cayendo
+    if (!onPlatform) {
+        this.jumping = true;
+    }
+
+    if (this.x < -this.width) {
+        this.position(GAME_WIDTH, this.y);
+    }
+    if (this.x > GAME_WIDTH) {
+        this.position(-this.width, this.y);
     }
 }
 
@@ -95,9 +127,23 @@ game_scene.keyDown = function (event) {
 //     }
 // }
 
-// game_scene.touchDown = function (x, y) {
-//     console.log("Game Scene touched at: " + x + ", " + y);
-// }
+game_scene.touchDown = function (x, y) {
+    game_scene.lastX = x;
+    game_scene.lastY = y;
+}
+
+game_scene.touchUp = function (x, y) {
+    if (x === game_scene.lastX && y === game_scene.lastY) {
+        this.jump();
+    } else {
+        let difX = x - game_scene.lastX;
+        if (difX < 0) {
+            this.running_left();
+        } else {
+            this.running_right();
+        }
+    }
+}
 
 game_scene.running_left = function () {
     this.player.dir = DIR_LEFT;
@@ -117,42 +163,5 @@ game_scene.jump = function () {
     if (!this.player.jumping) {
         this.player.jumping = true;
         this.player.vy = this.player.jumpForce;
-    }
-}
-
-game_scene.update = function () {
-    this.$update();
-    if (this.player.jumping) {
-        this.player.vy += this.player.gravity;
-        this.player.y += this.player.vy;
-        this.player.position(this.player.x, this.player.y);
-        // console.log("Jumping Vy: " + this.player.vy)
-    }
-
-    let onPlatform = false;
-
-    for (let p of this.platforms) {
-
-        // ¿Está el personaje sobre esta plataforma?
-        let isAbovePlatform =
-            this.player.x + this.player.width > p.x &&
-            this.player.x < p.x + p.width &&
-            this.player.y + this.player.height <= p.y &&
-            this.player.y + this.player.height + this.player.vy >= p.y;
-
-        if (isAbovePlatform) {
-            // Detener la caída
-            this.player.jumping = false;
-            onPlatform = true;
-            this.player.vy = 0;
-            this.player.y = p.y - this.player.height;
-            this.player.position(this.player.x, this.player.y);
-            break;
-        }
-    }
-
-    // Si no está sobre ninguna plataforma, sigue cayendo
-    if (!onPlatform) {
-        this.player.jumping = true;
     }
 }

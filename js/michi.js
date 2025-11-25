@@ -934,7 +934,7 @@ function MiScene() {
 
 MiScene.prototype = Object.create(MiLayer.prototype);
 
-MiScene.prototype.addImage = function (tagname, filename) {
+MiScene.prototype.loadImage = function (tagname, filename) {
     this.preloadImages.push({ tag: tagname, file: filename, image: null });
 }
 
