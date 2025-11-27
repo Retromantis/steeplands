@@ -1,7 +1,7 @@
 /**
  * Minimalist 2D game engine
- * @author Victor Zegarra
- * @date 18/11/2025
+ * @author Victor Zegarra (Retromantis)
+ * @date 26/11/2025
  * @version 1.00
  */
 
@@ -17,17 +17,22 @@ const DIR_DOWN = 8;
 //  Player state constants
 const STATE_NONE = 16;
 const STATE_IDLE = 32;
-const STATE_RUNNING = 64;
+const STATE_WALKING = 64;
+const STATE_RUNNING = 128;
 const STATE_JUMPING = 256;
 const STATE_FALLING = 512;
 const STATE_ATTACKING = 1024;
 const STATE_HURT = 2048;
 const STATE_DYING = 4096;
 const STATE_DEAD = 8192;
-
 // Example: Player is running to left = STATE_RUNNING | DIR_LEFT
 
-
+// Game states constants
+const GAME_IDLE = -1;
+const GAME_PLAYING = -2;
+const GAME_PAUSED = -3;
+const GAME_OVER = -4;
+const GAME_VICTORY = -5;
 
 let requestAnimationFrame;
 
@@ -101,6 +106,14 @@ function createGame(canvas_id, game_width, game_height, smooth) {
     // document.addEventListener("touchmove", touchMoveListener, false);
     document.addEventListener("touchend", touchEndListener, { passive: false });
 
+    // window.addEventListener("resize", () => {
+    //     const width = window.innerWidth;
+    //     const height = window.innerHeight;
+
+    //     console.log(`Nuevo tamaño: ${width} x ${height}`);
+    // });
+
+
     SCALE_WIDTH = canvas.width / GAME_WIDTH;
     SCALE_HEIGHT = canvas.height / GAME_HEIGHT;
 
@@ -157,13 +170,13 @@ function keyUpListener(event) {
 function mouseDownListener(event) {
     var x = Math.floor(event.clientX / SCALE_WIDTH);
     var y = Math.floor(event.clientY / SCALE_HEIGHT);
-    currscene.touchDown(x, y);
+    currscene.touchStart(x, y);
 }
 
 function mouseUpListener(event) {
     var x = event.clientX / SCALE_WIDTH;
     var y = event.clientY / SCALE_HEIGHT;
-    currscene.touchUp(x, y);
+    currscene.touchEnd(x, y);
 }
 
 function touchStartListener(event) {
@@ -171,7 +184,7 @@ function touchStartListener(event) {
     var touch = event.changedTouches[0];
     var x = Math.floor(touch.pageX / SCALE_WIDTH);
     var y = Math.floor(touch.pageY / SCALE_HEIGHT);
-    currscene.touchDown(x, y);
+    currscene.touchStart(x, y);
 }
 
 function touchEndListener(event) {
@@ -179,7 +192,7 @@ function touchEndListener(event) {
     var touch = event.changedTouches[0];
     var x = Math.floor(touch.pageX / SCALE_WIDTH);
     var y = Math.floor(touch.pageY / SCALE_HEIGHT);
-    currscene.touchUp(x, y);
+    currscene.touchEnd(x, y);
 }
 
 // function mouseDownListener(event) {
@@ -276,8 +289,8 @@ MiGame.prototype.createScene = function (tag, param) {
             for (let tag of this.sceneTags) {
                 let scene = this.scenes[tag];
                 scene.create();
-                scene.$update = MiScene.prototype.update; // $update = super.update
-                scene.$draw = MiScene.prototype.draw; // $draw = super.draw
+                scene.super_update = MiScene.prototype.update;
+                scene.super_draw = MiScene.prototype.draw;
             }
             this.startScene(tag, param);
         }

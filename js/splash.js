@@ -63,7 +63,7 @@ splash_scene.keyDown = function (event) {
     next_screen();
 }
 
-splash_scene.touchDown = function (x, y) {
+splash_scene.touchStart = function (x, y) {
     next_screen();
 }
 
