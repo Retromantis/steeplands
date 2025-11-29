@@ -558,8 +558,8 @@ MiSprite.prototype.draw = function (context) {
             this.frames[this.frameIndex][2], this.frames[this.frameIndex][3]);
 
         // /* for debugging */
-        // context.strokeStyle="#00FF00";
-        // context.strokeRect(this.cx,this.cy,this.cwidth,this.cheight);
+        // context.strokeStyle = "#FF00FF";
+        // context.strokeRect(this.cx, this.cy, this.cwidth, this.cheight);
 
         // if(typeof this.coll !== 'undefined') {
         //     context.strokeStyle="#00FFFF";
@@ -590,10 +590,10 @@ MiSprite.prototype.position = function (x, y) {
     }
 }
 
-MiSprite.prototype.setCollider = function (x, y, width, height) {
+MiSprite.prototype.setCollider = function (ofsX, ofsY, width, height) {
     for (var idx = 0; idx < this.frameCount; idx++) {
-        this.frames[idx][4] = x;
-        this.frames[idx][5] = y;
+        this.frames[idx][4] = ofsX;
+        this.frames[idx][5] = ofsY;
         this.frames[idx][6] = width;
         this.frames[idx][7] = height;
     }
