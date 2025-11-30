@@ -55,6 +55,7 @@ game_scene.create = function () {
 
     this.level = {
         platforms: [
+            { x: 0, y: 176, width: 48, height: 20 },
             { x: 80, y: 208, width: 64, height: 48 },
             { x: 176, y: 240, width: 48, height: 20 },
             { x: 144, y: 288, width: 64, height: 20 },
@@ -124,11 +125,20 @@ game_scene.player_update = function () {
         }
     }
 
-    if (this.x < -this.width) {
-        this.position(GAME_WIDTH, this.y);
+    // if (this.x < -this.width) {
+    //     this.position(GAME_WIDTH, this.y);
+    // }
+    // if (this.x > GAME_WIDTH) {
+    //     this.position(-this.width, this.y);
+    // }
+
+    if (this.x < 0) {
+        this.position(0, this.y);
+        game_scene.turn_right();
     }
-    if (this.x > GAME_WIDTH) {
-        this.position(-this.width, this.y);
+    if (this.x > GAME_WIDTH - this.width) {
+        this.position(GAME_WIDTH - this.width, this.y);
+        game_scene.turn_left();
     }
 }
 
