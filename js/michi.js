@@ -83,8 +83,8 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
     GAME_WIDTH = game_width || CANVAS_WIDTH;
     GAME_HEIGHT = game_height || CANVAS_HEIGHT;
 
-    if(CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
-    if(CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
+    if (CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
+    if (CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
 
     let scale = Math.min(CANVAS_WIDTH / GAME_WIDTH, CANVAS_HEIGHT / GAME_HEIGHT);
     let final_canvas_width = Math.floor(GAME_WIDTH * scale);
@@ -202,8 +202,8 @@ function touchStartListener(event) {
 function touchEndListener(event) {
     event.preventDefault();
     var touch = event.changedTouches[0];
-    var x = Math.floor(touch.pageX / SCALE_WIDTH);
-    var y = Math.floor(touch.pageY / SCALE_HEIGHT);
+    var x = Math.floor((touch.pageX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((touch.pageY - canvasY) / SCALE_HEIGHT);
     currscene.touchEnd(x, y);
 }
 

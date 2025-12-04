@@ -234,7 +234,7 @@ game_scene.start = function () {
     game_scene.state = GAME_IDLE;
     this.layer.remove(this.player);
     this.layer.remove(this.dead);
-    
+
     for (let enemy of this.enemies) {
         this.layer.remove(enemy);
     }
@@ -312,19 +312,32 @@ game_scene.touchEnd = function (x, y) {
     const dx = x - this.startX;
     const dy = y - this.startY;
 
-    if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
-        this.jump();
-        return;
-    }
+    // alert(this.startX + "," + this.startY + " Tap detected " + x + "," + y);
 
-    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= SWIPE_THRESHOLD) {
-        // Horizontal swipe
+    if (x === this.startX && y === this.startY) {
+        // alert("Tap detected " + dx + "," + dy);
+        this.jump();
+    } else {
         if (dx < 0) {
             this.turn_left();
         } else {
             this.turn_right();
         }
     }
+
+    // if (Math.abs(dx) < SWIPE_THRESHOLD && Math.abs(dy) < SWIPE_THRESHOLD) {
+    //     alert("Tap detected " + dx + "," + dy);
+    //     this.jump();
+    //     return;
+    // }
+    // if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) >= SWIPE_THRESHOLD) {
+    //     // Horizontal swipe
+    //     if (dx < 0) {
+    //         this.turn_left();
+    //     } else {
+    //         this.turn_right();
+    //     }
+    // }
 }
 
 game_scene.turn_left = function () {
