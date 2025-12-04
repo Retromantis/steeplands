@@ -69,7 +69,7 @@ function loadImage(filename, callback) {
     return image;
 }
 
-function createGame(canvas_id, game_width, game_height, smooth) {
+function createGame(canvas_id, canvas_width, canvas_height, game_width, game_height, smooth) {
     currscene = new MiScene();   // Dummy Scene
 
     WINDOW_WIDTH = window.innerWidth;
@@ -77,23 +77,27 @@ function createGame(canvas_id, game_width, game_height, smooth) {
 
     //    alert("Scene size: " + WINDOW_WIDTH + "x" + WINDOW_HEIGHT);
 
-    GAME_WIDTH = WINDOW_WIDTH;
-    GAME_HEIGHT = WINDOW_HEIGHT
+    CANVAS_WIDTH = canvas_width || WINDOW_WIDTH;
+    CANVAS_HEIGHT = canvas_height || WINDOW_HEIGHT;
 
-    if (game_width) {
-        GAME_WIDTH = game_width;
-    }
-    if (game_height) {
-        GAME_HEIGHT = game_height;
-    }
+    GAME_WIDTH = game_width || CANVAS_WIDTH;
+    GAME_HEIGHT = game_height || CANVAS_HEIGHT;
+
+    if(CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
+    if(CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
+
+    let scale = Math.min(CANVAS_WIDTH / GAME_WIDTH, CANVAS_HEIGHT / GAME_HEIGHT);
+    let final_canvas_width = Math.floor(GAME_WIDTH * scale);
+    let final_canvas_height = Math.floor(GAME_HEIGHT * scale);
 
     if (canvas_id) {
         canvas = document.getElementById(canvas_id);
     } else {
         canvas = document.createElement('canvas');
     }
-    canvas.width = WINDOW_WIDTH;
-    canvas.height = WINDOW_HEIGHT;
+    canvas.width = final_canvas_width;
+    canvas.height = final_canvas_height;
+
     canvas.style.background = "#000000";
 
     document.addEventListener("keydown", keyDownListener, false);
@@ -128,11 +132,17 @@ function createGame(canvas_id, game_width, game_height, smooth) {
     if (!canvas_id) {
         div_canvas = document.createElement("div");
         div_canvas.style.position = "absolute";
-        div_canvas.style.left = "0px";
-        div_canvas.style.top = "0px";
+        div_canvas.style.left = ((WINDOW_WIDTH - canvas.width) >> 1) + "px";
+        div_canvas.style.top = ((WINDOW_HEIGHT - canvas.height) >> 1) + "px";
+
         document.body.appendChild(div_canvas);
         div_canvas.appendChild(canvas);
     }
+
+    let clientRect = canvas.getBoundingClientRect();
+    canvasX = clientRect.left;
+    canvasY = clientRect.top;
+
 
     requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
         window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -168,22 +178,24 @@ function keyUpListener(event) {
 }
 
 function mouseDownListener(event) {
-    var x = Math.floor(event.clientX / SCALE_WIDTH);
-    var y = Math.floor(event.clientY / SCALE_HEIGHT);
+    var x = Math.floor((event.clientX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((event.clientY - canvasY) / SCALE_HEIGHT);
+    // console.log(`Mouse down at: ${x}, ${y}`);
     currscene.touchStart(x, y);
 }
 
 function mouseUpListener(event) {
-    var x = event.clientX / SCALE_WIDTH;
-    var y = event.clientY / SCALE_HEIGHT;
+    var x = Math.floor((event.clientX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((event.clientY - canvasY) / SCALE_HEIGHT);
     currscene.touchEnd(x, y);
 }
 
 function touchStartListener(event) {
     event.preventDefault();
     var touch = event.changedTouches[0];
-    var x = Math.floor(touch.pageX / SCALE_WIDTH);
-    var y = Math.floor(touch.pageY / SCALE_HEIGHT);
+    var x = Math.floor((touch.pageX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((touch.pageY - canvasY) / SCALE_HEIGHT);
+    // console.log(`Touch down at: ${x}, ${y}`);
     currscene.touchStart(x, y);
 }
 
