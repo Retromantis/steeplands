@@ -11,6 +11,7 @@ game_scene.preload = function () {
     this.loadImage('platform', 'assets/images/game/platform.png');
     this.loadImage('snail', 'assets/images/game/snail.png');
     this.loadImage('gem', 'assets/images/game/gem.png');
+    this.loadImage('dead', 'assets/images/game/dead.png');
 }
 
 game_scene.create = function () {
@@ -37,8 +38,6 @@ game_scene.create = function () {
         this.setAnimation(this.anims[id]);
     }
 
-    // this.add(this.player);
-
     this.SNAIL_WDT = 34;
     this.SNAIL_HGT = 21;
     this.SNAIL_SPEED_X = 1;
@@ -50,11 +49,30 @@ game_scene.create = function () {
     this.GEM_ANIM = { frames: [4, 5, 6, 7], delay: 4, loop: true };
     // this.GEM_ANIM = { frames: [0, 1, 2, 3], delay: 4, loop: true };
 
+    this.DEAD_WDT = 64;
+    this.DEAD_HGT = 64;
+    this.DEAD_ANIM = { frames: [0, 1, 2, 3], delay: 4, loop: false };
+
+    this.dead = new MiSprite(this.getImage('dead'), this.DEAD_WDT, this.DEAD_HGT);
+    this.dead.setAnimation(this.DEAD_ANIM);
+    this.dead.update = function () {
+        this.animate();
+    }
+    this.dead.onEndAnimation = function () {
+        game_scene.start();
+    }
+
     this.enemies = [];
     this.items = [];
+    this.platforms = [];
 
     this.level = {
         platforms: [
+            { x: 80, y: 32, width: 64, height: 20 },
+            { x: 80, y: 64, width: 64, height: 20 },
+            { x: 80, y: 96, width: 64, height: 20 },
+            { x: 80, y: 128, width: 64, height: 20 },
+            { x: 80, y: 160, width: 64, height: 20 },
             { x: 0, y: 176, width: 48, height: 20 },
             { x: 80, y: 208, width: 64, height: 48 },
             { x: 176, y: 240, width: 48, height: 20 },
@@ -73,11 +91,15 @@ game_scene.create = function () {
         ]
     };
 
+    this.layer = new MiLayer();
+    this.add(this.layer);
+
     for (let p of this.level.platforms) {
-        let spr = new MiSprite(this.getImage('platform'), p.width, p.height);
-        spr.position(p.x, p.y);
-        p.cy = p.y + 4; // guardar la coordenada y de la plataforma
-        this.add(spr);
+        let platform = new MiSprite(this.getImage('platform'), p.width, p.height);
+        platform.setCollider(0, 4, p.width, 10);
+        platform.position(p.x, p.y);
+        this.layer.add(platform);
+        this.platforms.push(platform);
     }
 }
 
@@ -92,22 +114,21 @@ game_scene.player_update = function () {
 
     let onPlatform = false;
 
-    for (let p of game_scene.level.platforms) {
+    for (let p of game_scene.platforms) {
 
         // ¿Está el personaje sobre esta plataforma?
         let isAbovePlatform =
             this.cx + this.cwidth > p.x &&
             this.cx < p.x + p.width &&
             this.cy + this.cheight <= p.cy &&
-            this.cy + this.cheight + this.vy >= p.y;
+            this.cy + this.cheight + this.vy >= p.cy;
 
         if (isAbovePlatform) {
             // Detener la caída
             this.jumping = false;
             onPlatform = true;
             this.vy = 0;
-            this.y = p.cy - this.height;
-            this.position(this.x, this.y);
+            this.position(this.x, p.cy - this.height);
             if (this.state === STATE_JUMPING) {
                 this.state = STATE_RUNNING;
                 this.setAnim(this.state | this.dir);
@@ -167,7 +188,7 @@ game_scene.snail_update = function () {
     this.move(this.vx, 0);
 
     if (this.collidesWith(game_scene.player)) {
-        // game_scene.start();
+        game_scene.set_state_dead();
     }
 
     if (this.x < this.bounds.x1) {
@@ -211,40 +232,46 @@ game_scene.gem_update = function () {
 
 game_scene.start = function () {
     game_scene.state = GAME_IDLE;
-    this.remove(this.player);
-
+    this.layer.remove(this.player);
+    this.layer.remove(this.dead);
+    
     for (let enemy of this.enemies) {
-        this.remove(enemy);
+        this.layer.remove(enemy);
     }
     this.enemies.length = 0;
 
     for (let item of this.items) {
-        this.remove(item);
+        this.layer.remove(item);
     }
     this.items.length = 0;
 
+    this.layer.position(0, 0);
 
     this.player.dir = DIR_RIGHT;
     this.player.state = STATE_IDLE;
     this.player.vx = 0;
     this.player.vy = 0;
     this.player.jumping = false;
-    this.player.position(GAME_WIDTH_HALF - 12, this.level.platforms[0].cy - this.player.height);
+    this.player.position(GAME_WIDTH_HALF - 12, this.platforms[0].cy - this.player.height);
+    // this.player.position(GAME_WIDTH_HALF - 12, -this.player.height);
     this.player.setAnim(STATE_IDLE | DIR_RIGHT);
+    this.player.isVisible = true;
 
     for (let enemy of this.level.enemies) {
         let snail = this.spawn_snail(enemy.x, enemy.y, enemy.dir, enemy.x1, enemy.x2);
-        this.add(snail);
+        this.layer.add(snail);
         this.enemies.push(snail);
     }
 
     for (let item of this.level.items) {
         let gem = this.spawn_gem(item.x, item.y);
-        this.add(gem);
+        this.layer.add(gem);
         this.items.push(gem);
     }
 
-    this.add(this.player);
+    this.layer.add(this.player);
+    this.layer.add(this.dead);
+    this.dead.isVisible = false;
 }
 
 game_scene.keyDown = function (event) {
@@ -266,9 +293,12 @@ game_scene.keyDown = function (event) {
         case "Escape":
             this.start();
             break
-        // case "ArrowDown":
-        //     this.idle();
-        //     break;
+        case "PageUp":
+            this.layer.move(0, -10);
+            break;
+        case "PageDown":
+            this.layer.move(0, 10);
+            break;
     }
 }
 
@@ -329,4 +359,11 @@ game_scene.idle = function () {
     this.player.vx = 0;
     this.player.state = STATE_IDLE;
     this.player.setAnim(STATE_IDLE | this.player.dir);
-}    
+}
+
+game_scene.set_state_dead = function () {
+    this.state = STATE_DEAD;
+    this.player.isVisible = false;
+    this.dead.position(this.player.x - 16, this.player.y - 16);
+    this.dead.isVisible = true;
+}

@@ -898,6 +898,10 @@ MiLayer.prototype.update = function () {
     }
 }
 
+MiLayer.prototype.move = function (ofsX, ofsY) {
+    this.position(this.x + ofsX, this.y + ofsY);
+}
+
 MiLayer.prototype.position = function (x, y) {
     let lastX = this.x;
     let lastY = this.y;
