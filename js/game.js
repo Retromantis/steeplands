@@ -23,7 +23,7 @@ game_scene.create = function () {
     this.player = new MiSprite(this.getImage('player'), 24, 24);
     this.player.GRAVITY = 2;
     this.player.JUMP_FORCE = -16;
-    this.player.SPEED_X = 1.5;
+    this.player.SPEED_X = 2.5;
     this.player.setCollider(6, 2, 12, 22);
     this.player.update = this.player_update;
 
@@ -40,7 +40,7 @@ game_scene.create = function () {
     }
 
     this.SNAIL_WDT = 34;
-    this.SNAIL_HGT = 21;
+    this.SNAIL_HGT = 22;
     this.SNAIL_SPEED_X = 1;
     this.SNAIL_ANIM_LEFT = { frames: [0, 1], delay: 2, loop: true };
     this.SNAIL_ANIM_RIGHT = { frames: [2, 3], delay: 2, loop: true };
@@ -119,7 +119,7 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
     platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
     platform.update = function () {
         this.move(this.vx, this.vy);
-        if (this.y < this.bounds.y1 || this.y > this.bounds.y2) {
+        if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
             this.vy = -this.vy;
         }
         if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
@@ -252,7 +252,7 @@ game_scene.spawn_snail = function (x, y, dir, x1, x2) {
         snail.setAnimation(this.SNAIL_ANIM_RIGHT);
         snail.direction = DIR_RIGHT;
     }
-    snail.setCollider(3, 4, 28, 17);
+    snail.setCollider(3, 5, 28, 17);
     return snail;
 }
 
@@ -316,9 +316,9 @@ game_scene.keyDown = function (event) {
             break;
         case "KeyW":
         case "ArrowUp":
-        case "Space":
             this.jump();
             break;
+        case "KeyS":
         case "ArrowDown":
             this.idle();
             break;
@@ -347,13 +347,18 @@ game_scene.touchEnd = function (x, y) {
     // alert(this.startX + "," + this.startY + " Tap detected " + x + "," + y);
 
     if (x === this.startX && y === this.startY) {
-        // alert("Tap detected " + dx + "," + dy);
-        this.jump();
-    } else {
+        // this.jump();
+    } else if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
             this.turn_left();
         } else {
             this.turn_right();
+        }
+    } else {
+        if (dy < 0) {
+            this.jump();
+        } else {
+            this.idle();
         }
     }
 
