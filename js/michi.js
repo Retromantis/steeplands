@@ -1,7 +1,7 @@
 /**
  * Minimalist 2D game engine
  * @author Victor Zegarra (Retromantis)
- * @date 26/11/2025
+ * @date 20/12/2025
  * @version 1.00
  */
 
@@ -19,12 +19,16 @@ const STATE_NONE = 16;
 const STATE_IDLE = 32;
 const STATE_WALKING = 64;
 const STATE_RUNNING = 128;
-const STATE_JUMPING = 256;
-const STATE_FALLING = 512;
-const STATE_ATTACKING = 1024;
-const STATE_HURT = 2048;
-const STATE_DYING = 4096;
-const STATE_DEAD = 8192;
+const STATE_ROLLING = 256;
+const STATE_SPINNING = 512;
+const STATE_CROUCHING = 1024;
+const STATE_SLIDING = 2048;
+const STATE_JUMPING = 4096;
+const STATE_FALLING = 8192;
+const STATE_ATTACKING = 16384;
+const STATE_HURT = 32768;
+const STATE_DYING = 65536;
+const STATE_DEAD = 131072;
 // Example: Player is running to left = STATE_RUNNING | DIR_LEFT
 
 // Game states constants

@@ -23,6 +23,7 @@ game_scene.create = function () {
     this.player = new MiSprite(this.getImage('player'), 24, 24);
     this.player.GRAVITY = 2;
     this.player.JUMP_FORCE = -16;
+    this.player.DOUBLE_JUMP_FORCE = -12;
     this.player.SPEED_X = 2.5;
     this.player.setCollider(6, 2, 12, 22);
     this.player.update = this.player_update;
@@ -146,15 +147,7 @@ game_scene.start = function () {
 
     this.layer.position(0, 0);
 
-    this.player.dir = DIR_RIGHT;
-    this.player.state = STATE_IDLE;
-    this.player.vx = 0;
-    this.player.vy = 0;
-    this.player.jumping = false;
-    this.player.position(24, this.platforms[this.level.platforms.length - 1].cy - this.player.height);
-    this.player.setAnim(STATE_IDLE | DIR_RIGHT);
-    this.player.isVisible = true;
-    this.player.onPlatform = null;
+    this.player_init();
 
     for (let enemy of this.level.enemies) {
         let snail = this.spawn_snail(enemy.x, enemy.y, enemy.dir, enemy.x1, enemy.x2);
@@ -171,6 +164,19 @@ game_scene.start = function () {
     this.layer.add(this.player);
     this.layer.add(this.dead);
     this.dead.isVisible = false;
+}
+
+game_scene.player_init = function () {
+    this.player.dir = DIR_RIGHT;
+    this.player.state = STATE_IDLE;
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.player.jumping = false;
+    this.player.doubleJump = false;
+    this.player.position(24, this.platforms[this.level.platforms.length - 1].cy - this.player.height);
+    this.player.setAnim(STATE_IDLE | DIR_RIGHT);
+    this.player.isVisible = true;
+    this.player.onPlatform = null;
 }
 
 game_scene.player_update = function () {
@@ -201,7 +207,7 @@ game_scene.player_update = function () {
                 this.onPlatform = p;
                 // Si es la plataforma elevadora, moverse con ella
                 this.position(this.x, p.cy - this.height);
-                console.log("On elevator");
+                // console.log("On elevator");
             }
             // Detener la caída
             this.jumping = false;
@@ -218,14 +224,20 @@ game_scene.player_update = function () {
 
     // Si no está sobre ninguna plataforma, sigue cayendo
     if (!onPlatform) {
-        this.onPlatform = null;
-        this.jumping = true;
-        if (this.state !== STATE_JUMPING) {
-            this.state = STATE_JUMPING;
-            this.setAnim(this.state | this.dir);
+        if (this.state !== STATE_IDLE) {
+            this.onPlatform = null;
+            this.jumping = true;
+            if (this.state !== STATE_JUMPING) {
+                console.log("Falling");
+                this.state = STATE_JUMPING;
+                // this.setAnim(this.state | this.dir);
+            }
         }
     }
 
+    if (this.y < 0) {
+        this.vy = -this.vy;
+    }
     if (this.x < 0) {
         this.position(0, this.y);
         game_scene.turn_right();
@@ -261,7 +273,7 @@ game_scene.snail_update = function () {
     this.move(this.vx, 0);
 
     if (this.collidesWith(game_scene.player)) {
-        game_scene.set_state_dead();
+        // game_scene.set_state_dead();
     }
 
     if (this.x < this.bounds.x1) {
@@ -346,8 +358,18 @@ game_scene.touchEnd = function (x, y) {
 
     // alert(this.startX + "," + this.startY + " Tap detected " + x + "," + y);
 
+    // if (x === this.startX && y === this.startY) {
+    //     this.jump();
+    // } else if (Math.abs(dx) > Math.abs(dy)) {
+    //     if (dx < 0) {
+    //         this.turn_left();
+    //     } else {
+    //         this.turn_right();
+    //     }
+    // }
+
     if (x === this.startX && y === this.startY) {
-        // this.jump();
+        this.jump();
     } else if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
             this.turn_left();
@@ -378,25 +400,33 @@ game_scene.touchEnd = function (x, y) {
 }
 
 game_scene.turn_left = function () {
-    if (this.player.state !== STATE_JUMPING) {
+    if (this.player.state === STATE_IDLE) {
         this.player.state = STATE_RUNNING;
+        this.player.dir = DIR_NONE;
     }
-    this.player.dir = DIR_LEFT;
-    this.player.vx = -this.player.SPEED_X;
-    this.player.setAnim(this.player.state | DIR_LEFT);
+    if (this.player.dir !== DIR_LEFT) {
+        this.player.dir = DIR_LEFT;
+        this.player.vx = -this.player.SPEED_X;
+        this.player.setAnim(this.player.state | DIR_LEFT);
+    }
 }
 
 game_scene.turn_right = function () {
-    if (this.player.state !== STATE_JUMPING) {
+    if (this.player.state === STATE_IDLE) {
         this.player.state = STATE_RUNNING;
+        this.player.dir = DIR_NONE;
     }
-    this.player.dir = DIR_RIGHT;
-    this.player.vx = this.player.SPEED_X;
-    this.player.setAnim(this.player.state | DIR_RIGHT);
+    if (this.player.dir !== DIR_RIGHT) {
+        this.player.dir = DIR_RIGHT;
+        this.player.vx = this.player.SPEED_X;
+        this.player.setAnim(this.player.state | DIR_RIGHT);
+    }
 }
 
 game_scene.jump = function () {
-    if (!this.player.jumping) {
+    if (this.player.jumping) {
+        this.player.vy = this.player.DOUBLE_JUMP_FORCE;
+    } else {
         this.player.state = STATE_JUMPING;
         this.player.jumping = true;
         this.player.vy = this.player.JUMP_FORCE;
