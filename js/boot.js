@@ -3,8 +3,8 @@
  * @date 18/11/2025
  */
 
-GAME_WIDTH = 360;
-GAME_HEIGHT = 640;
+GAME_WIDTH = 224;
+GAME_HEIGHT = 400;
 
 GAME_WIDTH_HALF = GAME_WIDTH >> 1;
 GAME_HEIGHT_HALF = GAME_HEIGHT >> 1;
@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bg_music.loop = true;
     bg_music.volume = 1;
 
-    game = createGame(null, GAME_WIDTH, GAME_HEIGHT, false);
+    game = createGame(null, 0, 0, GAME_WIDTH, GAME_HEIGHT, false);
     game.addScene('splash', splash_scene);
     game.addScene('game', game_scene);
     game.startScene('game');

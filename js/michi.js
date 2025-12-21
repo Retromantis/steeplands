@@ -1,7 +1,7 @@
 /**
  * Minimalist 2D game engine
- * @author Victor Zegarra
- * @date 18/11/2025
+ * @author Victor Zegarra (Retromantis)
+ * @date 20/12/2025
  * @version 1.00
  */
 
@@ -17,17 +17,26 @@ const DIR_DOWN = 8;
 //  Player state constants
 const STATE_NONE = 16;
 const STATE_IDLE = 32;
-const STATE_RUNNING = 64;
-const STATE_JUMPING = 256;
-const STATE_FALLING = 512;
-const STATE_ATTACKING = 1024;
-const STATE_HURT = 2048;
-const STATE_DYING = 4096;
-const STATE_DEAD = 8192;
-
+const STATE_WALKING = 64;
+const STATE_RUNNING = 128;
+const STATE_ROLLING = 256;
+const STATE_SPINNING = 512;
+const STATE_CROUCHING = 1024;
+const STATE_SLIDING = 2048;
+const STATE_JUMPING = 4096;
+const STATE_FALLING = 8192;
+const STATE_ATTACKING = 16384;
+const STATE_HURT = 32768;
+const STATE_DYING = 65536;
+const STATE_DEAD = 131072;
 // Example: Player is running to left = STATE_RUNNING | DIR_LEFT
 
-
+// Game states constants
+const GAME_IDLE = -1;
+const GAME_PLAYING = -2;
+const GAME_PAUSED = -3;
+const GAME_OVER = -4;
+const GAME_VICTORY = -5;
 
 let requestAnimationFrame;
 
@@ -64,7 +73,7 @@ function loadImage(filename, callback) {
     return image;
 }
 
-function createGame(canvas_id, game_width, game_height, smooth) {
+function createGame(canvas_id, canvas_width, canvas_height, game_width, game_height, smooth) {
     currscene = new MiScene();   // Dummy Scene
 
     WINDOW_WIDTH = window.innerWidth;
@@ -72,23 +81,27 @@ function createGame(canvas_id, game_width, game_height, smooth) {
 
     //    alert("Scene size: " + WINDOW_WIDTH + "x" + WINDOW_HEIGHT);
 
-    GAME_WIDTH = WINDOW_WIDTH;
-    GAME_HEIGHT = WINDOW_HEIGHT
+    CANVAS_WIDTH = canvas_width || WINDOW_WIDTH;
+    CANVAS_HEIGHT = canvas_height || WINDOW_HEIGHT;
 
-    if (game_width) {
-        GAME_WIDTH = game_width;
-    }
-    if (game_height) {
-        GAME_HEIGHT = game_height;
-    }
+    GAME_WIDTH = game_width || CANVAS_WIDTH;
+    GAME_HEIGHT = game_height || CANVAS_HEIGHT;
+
+    if (CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
+    if (CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
+
+    let scale = Math.min(CANVAS_WIDTH / GAME_WIDTH, CANVAS_HEIGHT / GAME_HEIGHT);
+    let final_canvas_width = Math.floor(GAME_WIDTH * scale);
+    let final_canvas_height = Math.floor(GAME_HEIGHT * scale);
 
     if (canvas_id) {
         canvas = document.getElementById(canvas_id);
     } else {
         canvas = document.createElement('canvas');
     }
-    canvas.width = WINDOW_WIDTH;
-    canvas.height = WINDOW_HEIGHT;
+    canvas.width = final_canvas_width;
+    canvas.height = final_canvas_height;
+
     canvas.style.background = "#000000";
 
     document.addEventListener("keydown", keyDownListener, false);
@@ -100,6 +113,14 @@ function createGame(canvas_id, game_width, game_height, smooth) {
     document.addEventListener("touchstart", touchStartListener, { passive: false });
     // document.addEventListener("touchmove", touchMoveListener, false);
     document.addEventListener("touchend", touchEndListener, { passive: false });
+
+    // window.addEventListener("resize", () => {
+    //     const width = window.innerWidth;
+    //     const height = window.innerHeight;
+
+    //     console.log(`Nuevo tamaño: ${width} x ${height}`);
+    // });
+
 
     SCALE_WIDTH = canvas.width / GAME_WIDTH;
     SCALE_HEIGHT = canvas.height / GAME_HEIGHT;
@@ -115,11 +136,17 @@ function createGame(canvas_id, game_width, game_height, smooth) {
     if (!canvas_id) {
         div_canvas = document.createElement("div");
         div_canvas.style.position = "absolute";
-        div_canvas.style.left = "0px";
-        div_canvas.style.top = "0px";
+        div_canvas.style.left = ((WINDOW_WIDTH - canvas.width) >> 1) + "px";
+        div_canvas.style.top = ((WINDOW_HEIGHT - canvas.height) >> 1) + "px";
+
         document.body.appendChild(div_canvas);
         div_canvas.appendChild(canvas);
     }
+
+    let clientRect = canvas.getBoundingClientRect();
+    canvasX = clientRect.left;
+    canvasY = clientRect.top;
+
 
     requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
         window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -155,31 +182,33 @@ function keyUpListener(event) {
 }
 
 function mouseDownListener(event) {
-    var x = Math.floor(event.clientX / SCALE_WIDTH);
-    var y = Math.floor(event.clientY / SCALE_HEIGHT);
-    currscene.touchDown(x, y);
+    var x = Math.floor((event.clientX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((event.clientY - canvasY) / SCALE_HEIGHT);
+    // console.log(`Mouse down at: ${x}, ${y}`);
+    currscene.touchStart(x, y);
 }
 
 function mouseUpListener(event) {
-    var x = event.clientX / SCALE_WIDTH;
-    var y = event.clientY / SCALE_HEIGHT;
-    currscene.touchUp(x, y);
+    var x = Math.floor((event.clientX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((event.clientY - canvasY) / SCALE_HEIGHT);
+    currscene.touchEnd(x, y);
 }
 
 function touchStartListener(event) {
     event.preventDefault();
     var touch = event.changedTouches[0];
-    var x = Math.floor(touch.pageX / SCALE_WIDTH);
-    var y = Math.floor(touch.pageY / SCALE_HEIGHT);
-    currscene.touchDown(x, y);
+    var x = Math.floor((touch.pageX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((touch.pageY - canvasY) / SCALE_HEIGHT);
+    // console.log(`Touch down at: ${x}, ${y}`);
+    currscene.touchStart(x, y);
 }
 
 function touchEndListener(event) {
     event.preventDefault();
     var touch = event.changedTouches[0];
-    var x = Math.floor(touch.pageX / SCALE_WIDTH);
-    var y = Math.floor(touch.pageY / SCALE_HEIGHT);
-    currscene.touchUp(x, y);
+    var x = Math.floor((touch.pageX - canvasX) / SCALE_WIDTH);
+    var y = Math.floor((touch.pageY - canvasY) / SCALE_HEIGHT);
+    currscene.touchEnd(x, y);
 }
 
 // function mouseDownListener(event) {
@@ -276,8 +305,8 @@ MiGame.prototype.createScene = function (tag, param) {
             for (let tag of this.sceneTags) {
                 let scene = this.scenes[tag];
                 scene.create();
-                scene.$update = MiScene.prototype.update; // $update = super.update
-                scene.$draw = MiScene.prototype.draw; // $draw = super.draw
+                scene.super_update = MiScene.prototype.update;
+                scene.super_draw = MiScene.prototype.draw;
             }
             this.startScene(tag, param);
         }
@@ -545,8 +574,8 @@ MiSprite.prototype.draw = function (context) {
             this.frames[this.frameIndex][2], this.frames[this.frameIndex][3]);
 
         // /* for debugging */
-        // context.strokeStyle="#00FF00";
-        // context.strokeRect(this.cx,this.cy,this.cwidth,this.cheight);
+        // context.strokeStyle = "#FF00FF";
+        // context.strokeRect(this.cx, this.cy, this.cwidth, this.cheight);
 
         // if(typeof this.coll !== 'undefined') {
         //     context.strokeStyle="#00FFFF";
@@ -577,10 +606,10 @@ MiSprite.prototype.position = function (x, y) {
     }
 }
 
-MiSprite.prototype.setCollider = function (x, y, width, height) {
+MiSprite.prototype.setCollider = function (ofsX, ofsY, width, height) {
     for (var idx = 0; idx < this.frameCount; idx++) {
-        this.frames[idx][4] = x;
-        this.frames[idx][5] = y;
+        this.frames[idx][4] = ofsX;
+        this.frames[idx][5] = ofsY;
         this.frames[idx][6] = width;
         this.frames[idx][7] = height;
     }
@@ -885,6 +914,10 @@ MiLayer.prototype.update = function () {
     }
 }
 
+MiLayer.prototype.move = function (ofsX, ofsY) {
+    this.position(this.x + ofsX, this.y + ofsY);
+}
+
 MiLayer.prototype.position = function (x, y) {
     let lastX = this.x;
     let lastY = this.y;
@@ -934,7 +967,7 @@ function MiScene() {
 
 MiScene.prototype = Object.create(MiLayer.prototype);
 
-MiScene.prototype.addImage = function (tagname, filename) {
+MiScene.prototype.loadImage = function (tagname, filename) {
     this.preloadImages.push({ tag: tagname, file: filename, image: null });
 }
 
