@@ -11,6 +11,7 @@ game_scene.preload = function () {
     this.loadImage('platform', 'assets/images/game/platform.png');
     this.loadImage('moving', 'assets/images/game/moving.png');
     this.loadImage('snail', 'assets/images/game/snail.png');
+    this.loadImage('spikes', 'assets/images/game/spikes.png');
     this.loadImage('gem', 'assets/images/game/gem.png');
     this.loadImage('dead', 'assets/images/game/dead.png');
 }
@@ -45,6 +46,17 @@ game_scene.create = function () {
     this.SNAIL_SPEED_X = 1;
     this.SNAIL_ANIM_LEFT = { frames: [0, 1], delay: 2, loop: true };
     this.SNAIL_ANIM_RIGHT = { frames: [2, 3], delay: 2, loop: true };
+
+    this.SPIKES_WDT = 32;
+    this.SPIKES_HGT = 10;
+    this.SPIKES_ANIM = { frames: [0, 1], delay: 8, loop: true };
+    this.spikes = new MiSprite(this.getImage('spikes'), this.SPIKES_WDT, this.SPIKES_HGT);
+    this.spikes.setAnimation(this.SPIKES_ANIM);
+    this.spikes.update = function () {
+        this.animate();
+    }
+    // this.add(this.spikes);
+    this.spikes.position(100, GAME_HEIGHT - this.SPIKES_HGT - 12);
 
     this.GEM_WDT = 16;
     this.GEM_HGT = 14;
@@ -102,12 +114,27 @@ game_scene.create = function () {
         this.platforms.push(platform);
     }
 
-    let mov1 = this.spawn_moving_platform(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
+    let mov1 = this.spawn_moving_platform2(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
+
+    let bg = new MiImage(this.getImage('moving'), 80, 64);
+    // bg.setCollider(0, 4, 80, 10);
+    bg.position(mov1.x, mov1.y);
+    mov1.add(bg);
+
+    this.spikes.position(mov1.x, mov1.y);
+    mov1.add(this.spikes);
+
     this.layer.add(mov1);
     this.platforms.push(mov1);
+
+
+
+
+
     mov1 = this.spawn_moving_platform(176, 100, 48, 20, 0, 1, 0, GAME_WIDTH - 64, 100, 210);
     this.layer.add(mov1);
     this.platforms.push(mov1);
+
 }
 
 game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
@@ -128,6 +155,51 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
         }
     }
     return platform;
+}
+
+game_scene.spawn_moving_platform2 = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
+    let layer = new MiLayer();
+    layer.width = width;
+    layer.height = height;
+    layer.setCollider(0, 4, width, 10);
+    layer.position(x, y);
+    layer.type = "moving";
+    layer.vx = speed_x;
+    layer.vy = speed_y;
+    layer.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
+    layer.super_update = layer.update;
+    layer.update = function () {
+        this.super_update();
+
+        this.move(this.vx, this.vy);
+        if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
+            this.vy = -this.vy;
+        }
+        if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
+            this.vx = -this.vx;
+        }
+    }
+    return layer;
+
+
+
+    // let platform = new MiSprite(this.getImage('moving'), width, height);
+    // platform.setCollider(0, 4, width, 10);
+    // platform.position(x, y);
+    // platform.type = "moving";
+    // platform.vx = speed_x;
+    // platform.vy = speed_y;
+    // platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
+    // platform.update = function () {
+    //     this.move(this.vx, this.vy);
+    //     if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
+    //         this.vy = -this.vy;
+    //     }
+    //     if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
+    //         this.vx = -this.vx;
+    //     }
+    // }
+    // return platform;
 }
 
 game_scene.start = function () {
