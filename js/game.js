@@ -283,6 +283,7 @@ game_scene.player_update = function () {
             }
             // Detener la caída
             this.jumping = false;
+            this.doubleJump = false;
             onPlatform = true;
             this.vy = 0;
             this.position(this.x, p.cy - this.height);
@@ -496,11 +497,16 @@ game_scene.turn_right = function () {
 }
 
 game_scene.jump = function () {
+    if (this.player.doubleJump) {
+        return;
+    }
     if (this.player.jumping) {
         this.player.vy = this.player.DOUBLE_JUMP_FORCE;
+        this.player.doubleJump = true;
     } else {
         this.player.state = STATE_JUMPING;
         this.player.jumping = true;
+        this.player.doubleJump = false;
         this.player.vy = this.player.JUMP_FORCE;
         this.player.vx = this.player.dir === DIR_LEFT ? -this.player.SPEED_X : this.player.SPEED_X;
         this.player.setAnim(STATE_JUMPING | this.player.dir);
