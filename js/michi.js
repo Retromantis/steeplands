@@ -1,8 +1,8 @@
 /**
  * Minimalist 2D game engine
  * @author Victor Zegarra (Retromantis)
- * @date 20/12/2025
- * @version 1.00
+ * @date 21/12/2025
+ * @version 1.01
  */
 
 const GAME_FPS = 25;
@@ -903,6 +903,9 @@ MiLayer.prototype.draw = function (context) {
             drawable.draw(context);
         }
     }
+    // /* for debugging */
+    // context.strokeStyle = "#FF00FF";
+    // context.strokeRect(this.x, this.y, this.width, this.height);
 }
 
 MiLayer.prototype.update = function () {
@@ -912,6 +915,13 @@ MiLayer.prototype.update = function () {
             updateable.update();
         }
     }
+}
+
+MiLayer.prototype.setCollider = function (ofsX, ofsY, width, height) {
+    this.ofsX = ofsX;
+    this.ofsY = ofsY;
+    this.cwidth = width;
+    this.cheight = height;
 }
 
 MiLayer.prototype.move = function (ofsX, ofsY) {
@@ -932,8 +942,10 @@ MiLayer.prototype.position = function (x, y) {
     if (this.centerY) {
         this.y -= (this.height >> 1);
     }
-    this.cx = this.x;
-    this.cy = this.y;
+    // console.log(`Layer X: ${this.x}, ${this.cx}`);
+    // console.log(`Layer Y: ${this.y}, ${this.cy}`);
+    this.cx = this.x + this.ofsX;
+    this.cy = this.y + this.ofsY;
 
     if (this.parent) {
         this.px = this.ax - this.parent.x;
