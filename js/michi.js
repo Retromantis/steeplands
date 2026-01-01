@@ -155,6 +155,37 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
     fpsInterval = 1000 / GAME_FPS;
     lastTime = Date.now();
 
+
+    let lastWidth = window.innerWidth;
+    let lastHeight = window.innerHeight;
+
+    window.addEventListener("resize", () => {
+        if (
+            window.innerWidth !== lastWidth ||
+            window.innerHeight !== lastHeight
+        ) {
+            lastWidth = window.innerWidth;
+            lastHeight = window.innerHeight;
+
+            console.log("Resolución cambió:", lastWidth, lastHeight);
+            // alert("Resolución cambiada " + lastWidth + "x" + lastHeight);
+            canvas.width = lastWidth;
+            canvas.height = lastHeight
+            SCALE_WIDTH = canvas.width / GAME_WIDTH;
+            SCALE_HEIGHT = canvas.height / GAME_HEIGHT;
+
+            ctx.scale(SCALE_WIDTH, SCALE_HEIGHT);
+            ctx.imageSmoothingEnabled = false;
+            ctx.msImageSmoothingEnabled = false;
+
+            let clientRect = canvas.getBoundingClientRect();
+            canvasX = clientRect.left;
+            canvasY = clientRect.top;
+
+        }
+    });
+
+
     return new MiGame();
 }
 
