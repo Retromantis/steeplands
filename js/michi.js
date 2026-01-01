@@ -1,8 +1,8 @@
 /**
  * Minimalist 2D game engine
  * @author Victor Zegarra (Retromantis)
- * @date 21/12/2025
- * @version 1.01
+ * @date 01/01/2026
+ * @version 1.02
  */
 
 const GAME_FPS = 25;
@@ -76,33 +76,12 @@ function loadImage(filename, callback) {
 function createGame(canvas_id, canvas_width, canvas_height, game_width, game_height, smooth) {
     currscene = new MiScene();   // Dummy Scene
 
-    WINDOW_WIDTH = window.innerWidth;
-    WINDOW_HEIGHT = window.innerHeight;
-
-    //    alert("Scene size: " + WINDOW_WIDTH + "x" + WINDOW_HEIGHT);
-
-    CANVAS_WIDTH = canvas_width || WINDOW_WIDTH;
-    CANVAS_HEIGHT = canvas_height || WINDOW_HEIGHT;
-
-    GAME_WIDTH = game_width || CANVAS_WIDTH;
-    GAME_HEIGHT = game_height || CANVAS_HEIGHT;
-
-    if (CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
-    if (CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
-
-    let scale = Math.min(CANVAS_WIDTH / GAME_WIDTH, CANVAS_HEIGHT / GAME_HEIGHT);
-    let final_canvas_width = Math.floor(GAME_WIDTH * scale);
-    let final_canvas_height = Math.floor(GAME_HEIGHT * scale);
-
-    if (canvas_id) {
-        canvas = document.getElementById(canvas_id);
-    } else {
-        canvas = document.createElement('canvas');
-    }
-    canvas.width = final_canvas_width;
-    canvas.height = final_canvas_height;
-
-    canvas.style.background = "#000000";
+    let config = {}
+    config.canvas_width = canvas_width;
+    config.canvas_height = canvas_height;
+    config.game_width = game_width;
+    config.game_height = game_height;
+    config.smooth = smooth;
 
     document.addEventListener("keydown", keyDownListener, false);
     document.addEventListener("keyup", keyUpListener, false);
@@ -114,39 +93,24 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
     // document.addEventListener("touchmove", touchMoveListener, false);
     document.addEventListener("touchend", touchEndListener, { passive: false });
 
-    // window.addEventListener("resize", () => {
-    //     const width = window.innerWidth;
-    //     const height = window.innerHeight;
-
-    //     console.log(`Nuevo tamaño: ${width} x ${height}`);
-    // });
-
-
-    SCALE_WIDTH = canvas.width / GAME_WIDTH;
-    SCALE_HEIGHT = canvas.height / GAME_HEIGHT;
-
-    ctx = canvas.getContext('2d');
-    ctx.scale(SCALE_WIDTH, SCALE_HEIGHT);
-
-    if (smooth == false) {
-        ctx.imageSmoothingEnabled = false;
-        ctx.msImageSmoothingEnabled = false;
+    if (canvas_id) {
+        canvas = document.getElementById(canvas_id);
+    } else {
+        canvas = document.createElement('canvas');
     }
-
-    if (!canvas_id) {
+    canvas.style.background = "#000000";
+    
+    if (canvas_id) {
+        config.div_canvas = canvas.parentElement;
+    } else {
         div_canvas = document.createElement("div");
-        div_canvas.style.position = "absolute";
-        div_canvas.style.left = ((WINDOW_WIDTH - canvas.width) >> 1) + "px";
-        div_canvas.style.top = ((WINDOW_HEIGHT - canvas.height) >> 1) + "px";
-
         document.body.appendChild(div_canvas);
         div_canvas.appendChild(canvas);
+        config.div_canvas = div_canvas;
     }
 
-    let clientRect = canvas.getBoundingClientRect();
-    canvasX = clientRect.left;
-    canvasY = clientRect.top;
-
+    config.canvas = canvas;
+    resize_screen(config);
 
     requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
         window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -155,38 +119,61 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
     fpsInterval = 1000 / GAME_FPS;
     lastTime = Date.now();
 
-
-    let lastWidth = window.innerWidth;
-    let lastHeight = window.innerHeight;
+    config.lastWidth = window.innerWidth;
+    config.lastHeight = window.innerHeight;
 
     window.addEventListener("resize", () => {
+        console.log("Resize event detected");
         if (
-            window.innerWidth !== lastWidth ||
-            window.innerHeight !== lastHeight
+            window.innerWidth !== config.lastWidth ||
+            window.innerHeight !== config.lastHeight
         ) {
-            lastWidth = window.innerWidth;
-            lastHeight = window.innerHeight;
-
-            console.log("Resolución cambió:", lastWidth, lastHeight);
-            // alert("Resolución cambiada " + lastWidth + "x" + lastHeight);
-            canvas.width = lastWidth;
-            canvas.height = lastHeight
-            SCALE_WIDTH = canvas.width / GAME_WIDTH;
-            SCALE_HEIGHT = canvas.height / GAME_HEIGHT;
-
-            ctx.scale(SCALE_WIDTH, SCALE_HEIGHT);
-            ctx.imageSmoothingEnabled = false;
-            ctx.msImageSmoothingEnabled = false;
-
-            let clientRect = canvas.getBoundingClientRect();
-            canvasX = clientRect.left;
-            canvasY = clientRect.top;
-
+            config.lastWidth = window.innerWidth;
+            config.lastHeight = window.innerHeight;
+            console.log("Resolución cambió:", config.lastWidth, config.lastHeight);
+            resize_screen(config);
         }
     });
 
-
     return new MiGame();
+}
+
+function resize_screen(config) {
+    WINDOW_WIDTH = window.innerWidth;
+    WINDOW_HEIGHT = window.innerHeight;
+
+    CANVAS_WIDTH = config.canvas_width || WINDOW_WIDTH;
+    CANVAS_HEIGHT = config.canvas_height || WINDOW_HEIGHT;
+    GAME_WIDTH = config.game_width || CANVAS_WIDTH;
+    GAME_HEIGHT = config.game_height || CANVAS_HEIGHT;
+
+    if (CANVAS_WIDTH > WINDOW_WIDTH) CANVAS_WIDTH = WINDOW_WIDTH;
+    if (CANVAS_HEIGHT > WINDOW_HEIGHT) CANVAS_HEIGHT = WINDOW_HEIGHT;
+
+    let scale = Math.min(CANVAS_WIDTH / GAME_WIDTH, CANVAS_HEIGHT / GAME_HEIGHT);
+    let final_canvas_width = Math.floor(GAME_WIDTH * scale);
+    let final_canvas_height = Math.floor(GAME_HEIGHT * scale);
+
+    config.canvas.width = final_canvas_width;
+    config.canvas.height = final_canvas_height;
+
+    SCALE_WIDTH = config.canvas.width / GAME_WIDTH;
+    SCALE_HEIGHT = config.canvas.height / GAME_HEIGHT;
+    ctx = config.canvas.getContext('2d');
+    ctx.scale(SCALE_WIDTH, SCALE_HEIGHT);
+
+    if (config.smooth == false) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.msImageSmoothingEnabled = false;
+    }
+
+    config.div_canvas.style.position = "absolute";
+    config.div_canvas.style.left = ((WINDOW_WIDTH - config.canvas.width) >> 1) + "px";
+    config.div_canvas.style.top = ((WINDOW_HEIGHT - config.canvas.height) >> 1) + "px";
+
+    let clientRect = canvas.getBoundingClientRect();
+    canvasX = clientRect.left;
+    canvasY = clientRect.top;
 }
 
 function main_loop() {
