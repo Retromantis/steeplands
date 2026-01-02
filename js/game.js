@@ -28,6 +28,7 @@ game_scene.create = function () {
     this.player.SPEED_X = 2.5;
     this.player.setCollider(6, 2, 12, 22);
     this.player.update = this.player_update;
+    this.player.bounds = { x1: 0, x2: GAME_WIDTH - this.player.width, y1: 0, y2: GAME_HEIGHT + this.player.height };
 
     this.player.anims = {};
     this.player.anims[STATE_IDLE | DIR_LEFT] = { frames: [0, 1], delay: 8, loop: true };
@@ -88,8 +89,8 @@ game_scene.create = function () {
             { x: 80, y: 208, width: 64, height: 48 },
             { x: 176, y: 240, width: 48, height: 20 },
             { x: 144, y: 288, width: 64, height: 20 },
-            { x: 80, y: 336, width: 192, height: 20 },
-            { x: -16, y: 384, width: 256, height: 20 }
+            { x: -16, y: 384, width: 128, height: 20 },
+            { x: 156, y: 384, width: 128, height: 20 }
         ],
         enemies: [
             { x: 200, y: 367, dir: DIR_LEFT, x1: 0, x2: GAME_WIDTH - this.SNAIL_WDT },
@@ -245,15 +246,15 @@ game_scene.player_update = function () {
         }
     }
 
-    if (this.y < 0) {
-        this.vy = -this.vy;
+
+    if (this.y > this.bounds.y2) {
+        this.position(this.x, -this.height);
     }
-    if (this.x < 0) {
-        this.position(0, this.y);
+    if (this.x < this.bounds.x1) {
+        this.position(this.bounds.x1, this.y);
         game_scene.turn_right();
-    }
-    if (this.x > GAME_WIDTH - this.width) {
-        this.position(GAME_WIDTH - this.width, this.y);
+    } else if (this.x > this.bounds.x2) {
+        this.position(this.bounds.x2, this.y);
         game_scene.turn_left();
     }
 }
