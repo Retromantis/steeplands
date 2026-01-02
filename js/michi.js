@@ -2,7 +2,7 @@
  * Minimalist 2D game engine
  * @author Victor Zegarra (Retromantis)
  * @date 01/01/2026
- * @version 1.02
+ * @version 1.03
  */
 
 const GAME_FPS = 25;
@@ -99,7 +99,7 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
         canvas = document.createElement('canvas');
     }
     canvas.style.background = "#000000";
-    
+
     if (canvas_id) {
         config.div_canvas = canvas.parentElement;
     } else {
@@ -130,7 +130,7 @@ function createGame(canvas_id, canvas_width, canvas_height, game_width, game_hei
         ) {
             config.lastWidth = window.innerWidth;
             config.lastHeight = window.innerHeight;
-            console.log("Resolución cambió:", config.lastWidth, config.lastHeight);
+            // console.log("Screen resolution changed:", config.lastWidth, config.lastHeight);
             resize_screen(config);
         }
     });
@@ -914,6 +914,14 @@ MiLayer.prototype.remove = function (child) {
     }
 }
 
+MiLayer.prototype.clear = function () {
+    this.drawables = [];
+    this.updateables = [];
+    this.nDrawables = 0;
+    this.nUpdateables = 0;
+}
+
+
 MiLayer.prototype.draw = function (context) {
     for (var idx = 0; idx < this.nDrawables; idx++) {
         let drawable = this.drawables[idx];
@@ -1015,8 +1023,8 @@ MiScene.prototype.keyDown = function (event) { }
 
 MiScene.prototype.keyUp = function (event) { }
 
-MiScene.prototype.touchDown = function (x, y) { }
+MiScene.prototype.touchStart = function (x, y) { }
 
-MiScene.prototype.touchUp = function (x, y) { }
+MiScene.prototype.touchEnd = function (x, y) { }
 
 MiScene.prototype.onBack = function () { }

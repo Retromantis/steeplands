@@ -14,7 +14,6 @@ game_scene.preload = function () {
     this.loadImage('spikes', 'assets/images/game/spikes.png');
     this.loadImage('gem', 'assets/images/game/gem.png');
     this.loadImage('dead', 'assets/images/game/dead.png');
-    this.loadImage('bullet', 'assets/images/game/bullet.png');
 }
 
 game_scene.create = function () {
@@ -112,16 +111,7 @@ game_scene.create = function () {
         this.platforms.push(platform);
     }
 
-    let mov1 = this.spawn_moving_platform2(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
-
-    let bg = new MiImage(this.getImage('moving'), 80, 64);
-    // bg.setCollider(0, 4, 80, 10);
-    bg.position(mov1.x, mov1.y);
-    mov1.add(bg);
-
-    this.spikes.position(mov1.x, mov1.y);
-    mov1.add(this.spikes);
-
+    let mov1 = this.spawn_moving_platform(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
     this.add(mov1);
     this.platforms.push(mov1);
 
@@ -129,11 +119,6 @@ game_scene.create = function () {
     mov1 = this.spawn_moving_platform(176, 100, 48, 20, 0, 1, 0, GAME_WIDTH - 64, 100, 210);
     this.add(mov1);
     this.platforms.push(mov1);
-
-    this.BULLET_WDT = 8;
-    this.BULLET_HGT = 8;
-    this.BULLET_SPEED_X = 5;
-    this.BULLET_ANIM = { frames: [0, 1], delay: 0, loop: true };
 }
 
 game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
@@ -154,51 +139,6 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
         }
     }
     return platform;
-}
-
-game_scene.spawn_moving_platform2 = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
-    let layer = new MiLayer();
-    layer.width = width;
-    layer.height = height;
-    layer.setCollider(0, 4, width, 10);
-    layer.position(x, y);
-    layer.type = "moving";
-    layer.vx = speed_x;
-    layer.vy = speed_y;
-    layer.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
-    layer.super_update = layer.update;
-    layer.update = function () {
-        this.super_update();
-
-        this.move(this.vx, this.vy);
-        if (this.y < (this.bounds.y1 + game_scene.y) || this.y > (this.bounds.y2 + game_scene.y)) {
-            this.vy = -this.vy;
-        }
-        if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
-            this.vx = -this.vx;
-        }
-    }
-    return layer;
-
-
-
-    // let platform = new MiSprite(this.getImage('moving'), width, height);
-    // platform.setCollider(0, 4, width, 10);
-    // platform.position(x, y);
-    // platform.type = "moving";
-    // platform.vx = speed_x;
-    // platform.vy = speed_y;
-    // platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
-    // platform.update = function () {
-    //     this.move(this.vx, this.vy);
-    //     if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
-    //         this.vy = -this.vy;
-    //     }
-    //     if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
-    //         this.vx = -this.vx;
-    //     }
-    // }
-    // return platform;
 }
 
 game_scene.start = function () {
@@ -398,6 +338,7 @@ game_scene.keyDown = function (event) {
             break;
         case "KeyW":
         case "ArrowUp":
+        case "Space":
             this.jump();
             break;
         case "KeyS":
@@ -407,11 +348,6 @@ game_scene.keyDown = function (event) {
         case "Escape":
             this.start();
             break
-        case "ControlLeft":
-        case "ControlRight":
-        case "Space":
-            this.shoot_bullet();
-            break;
     }
 }
 
@@ -438,7 +374,7 @@ game_scene.touchEnd = function (x, y) {
     // }
 
     if (x === this.startX && y === this.startY) {
-        this.shoot_bullet();
+        this.jump();
     } else if (Math.abs(dx) > Math.abs(dy)) {
         if (dx < 0) {
             this.turn_left();
@@ -520,24 +456,4 @@ game_scene.set_state_dead = function () {
     this.player.isVisible = false;
     this.dead.position(this.player.x - 16, this.player.y - 16);
     this.dead.isVisible = true;
-}
-
-game_scene.shoot_bullet = function () {
-    let bullet = this.spawn_bullet(this.player.cx + this.BULLET_WDT, this.player.cy + this.BULLET_HGT, this.player.dir);
-    this.add(bullet);
-}
-
-game_scene.spawn_bullet = function (x, y, direction) {
-    let bullet = new MiSprite(this.getImage('bullet'), this.BULLET_WDT, this.BULLET_HGT);
-    bullet.position(x, y);
-    bullet.setAnimation(this.BULLET_ANIM);
-    bullet.vx = direction === DIR_LEFT ? -this.BULLET_SPEED_X : this.BULLET_SPEED_X;
-    bullet.update = function () {
-        this.animate();
-        this.move(this.vx, 0);
-        if (this.x < -this.width || this.x > GAME_WIDTH) {
-            this.isVisible = false;
-        }
-    }
-    return bullet;
 }
