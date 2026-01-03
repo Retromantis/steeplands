@@ -168,6 +168,7 @@ function resize_screen(config) {
     }
 
     config.div_canvas.style.position = "absolute";
+    config.div_canvas.style.imageRendering = "pixelated";
     config.div_canvas.style.left = ((WINDOW_WIDTH - config.canvas.width) >> 1) + "px";
     config.div_canvas.style.top = ((WINDOW_HEIGHT - config.canvas.height) >> 1) + "px";
 
