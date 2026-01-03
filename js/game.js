@@ -28,6 +28,7 @@ game_scene.create = function () {
     this.player.SPEED_X = 2.5;
     this.player.setCollider(6, 2, 12, 22);
     this.player.update = this.player_update;
+    this.player.bounds = { x1: 0, x2: GAME_WIDTH - this.player.width, y1: 0, y2: GAME_HEIGHT + this.player.height };
 
     this.player.anims = {};
     this.player.anims[STATE_IDLE | DIR_LEFT] = { frames: [0, 1], delay: 8, loop: true };
@@ -88,8 +89,8 @@ game_scene.create = function () {
             { x: 80, y: 208, width: 64, height: 48 },
             { x: 176, y: 240, width: 48, height: 20 },
             { x: 144, y: 288, width: 64, height: 20 },
-            { x: 80, y: 336, width: 192, height: 20 },
-            { x: -16, y: 384, width: 256, height: 20 }
+            { x: -16, y: 384, width: 128, height: 20 },
+            { x: 156, y: 384, width: 128, height: 20 }
         ],
         enemies: [
             { x: 200, y: 367, dir: DIR_LEFT, x1: 0, x2: GAME_WIDTH - this.SNAIL_WDT },
@@ -102,39 +103,23 @@ game_scene.create = function () {
         ]
     };
 
-    this.layer = new MiLayer();
-    this.add(this.layer);
-
     for (let p of this.level.platforms) {
         let platform = new MiSprite(this.getImage('platform'), p.width, p.height);
         platform.setCollider(0, 4, p.width, 10);
         platform.position(p.x, p.y);
         platform.type = "static";
-        this.layer.add(platform);
+        this.add(platform);
         this.platforms.push(platform);
     }
 
-    let mov1 = this.spawn_moving_platform2(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
-
-    let bg = new MiImage(this.getImage('moving'), 80, 64);
-    // bg.setCollider(0, 4, 80, 10);
-    bg.position(mov1.x, mov1.y);
-    mov1.add(bg);
-
-    this.spikes.position(mov1.x, mov1.y);
-    mov1.add(this.spikes);
-
-    this.layer.add(mov1);
+    let mov1 = this.spawn_moving_platform(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
+    this.add(mov1);
     this.platforms.push(mov1);
-
-
-
 
 
     mov1 = this.spawn_moving_platform(176, 100, 48, 20, 0, 1, 0, GAME_WIDTH - 64, 100, 210);
-    this.layer.add(mov1);
+    this.add(mov1);
     this.platforms.push(mov1);
-
 }
 
 game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
@@ -147,7 +132,7 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
     platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
     platform.update = function () {
         this.move(this.vx, this.vy);
-        if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
+        if (this.y < (this.bounds.y1 + game_scene.y) || this.y > (this.bounds.y2 + game_scene.y)) {
             this.vy = -this.vy;
         }
         if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
@@ -157,84 +142,37 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
     return platform;
 }
 
-game_scene.spawn_moving_platform2 = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
-    let layer = new MiLayer();
-    layer.width = width;
-    layer.height = height;
-    layer.setCollider(0, 4, width, 10);
-    layer.position(x, y);
-    layer.type = "moving";
-    layer.vx = speed_x;
-    layer.vy = speed_y;
-    layer.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
-    layer.super_update = layer.update;
-    layer.update = function () {
-        this.super_update();
-
-        this.move(this.vx, this.vy);
-        if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
-            this.vy = -this.vy;
-        }
-        if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
-            this.vx = -this.vx;
-        }
-    }
-    return layer;
-
-
-
-    // let platform = new MiSprite(this.getImage('moving'), width, height);
-    // platform.setCollider(0, 4, width, 10);
-    // platform.position(x, y);
-    // platform.type = "moving";
-    // platform.vx = speed_x;
-    // platform.vy = speed_y;
-    // platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
-    // platform.update = function () {
-    //     this.move(this.vx, this.vy);
-    //     if (this.y < (this.bounds.y1 + game_scene.layer.y) || this.y > (this.bounds.y2 + game_scene.layer.y)) {
-    //         this.vy = -this.vy;
-    //     }
-    //     if (this.x < this.bounds.x1 || this.x > this.bounds.x2) {
-    //         this.vx = -this.vx;
-    //     }
-    // }
-    // return platform;
-}
-
 game_scene.start = function () {
     game_scene.state = GAME_IDLE;
-    this.layer.remove(this.player);
-    this.layer.remove(this.dead);
+    this.remove(this.player);
+    this.remove(this.dead);
 
     for (let enemy of this.enemies) {
-        this.layer.remove(enemy);
+        this.remove(enemy);
     }
     this.enemies.length = 0;
 
     for (let item of this.items) {
-        this.layer.remove(item);
+        this.remove(item);
     }
     this.items.length = 0;
-
-    this.layer.position(0, 0);
 
     this.player_init();
 
     for (let enemy of this.level.enemies) {
         let snail = this.spawn_snail(enemy.x, enemy.y, enemy.dir, enemy.x1, enemy.x2);
-        this.layer.add(snail);
+        this.add(snail);
         this.enemies.push(snail);
     }
 
     for (let item of this.level.items) {
         let gem = this.spawn_gem(item.x, item.y);
-        this.layer.add(gem);
+        this.add(gem);
         this.items.push(gem);
     }
 
-    this.layer.add(this.player);
-    this.layer.add(this.dead);
+    this.add(this.player);
+    this.add(this.dead);
     this.dead.isVisible = false;
 }
 
@@ -308,15 +246,15 @@ game_scene.player_update = function () {
         }
     }
 
-    if (this.y < 0) {
-        this.vy = -this.vy;
+
+    if (this.y > this.bounds.y2) {
+        this.position(this.x, -this.height);
     }
-    if (this.x < 0) {
-        this.position(0, this.y);
+    if (this.x < this.bounds.x1) {
+        this.position(this.bounds.x1, this.y);
         game_scene.turn_right();
-    }
-    if (this.x > GAME_WIDTH - this.width) {
-        this.position(GAME_WIDTH - this.width, this.y);
+    } else if (this.x > this.bounds.x2) {
+        this.position(this.bounds.x2, this.y);
         game_scene.turn_left();
     }
 }
@@ -389,7 +327,7 @@ game_scene.gem_update = function () {
 }
 
 game_scene.keyDown = function (event) {
-    // console.log(event.key + " " + event.code);
+    console.log(event.key + " " + event.code);
     switch (event.code) {
         case "KeyA":
         case "ArrowLeft":
@@ -401,6 +339,7 @@ game_scene.keyDown = function (event) {
             break;
         case "KeyW":
         case "ArrowUp":
+        case "Space":
             this.jump();
             break;
         case "KeyS":
@@ -410,12 +349,6 @@ game_scene.keyDown = function (event) {
         case "Escape":
             this.start();
             break
-        case "PageUp":
-            this.layer.move(0, -10);
-            break;
-        case "PageDown":
-            this.layer.move(0, 10);
-            break;
     }
 }
 
