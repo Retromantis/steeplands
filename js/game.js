@@ -92,6 +92,10 @@ game_scene.create = function () {
             { x: -16, y: 384, width: 128, height: 20 },
             { x: 156, y: 384, width: 128, height: 20 }
         ],
+        carriers: [
+            { x: 80, y: 64, width: 64, height: 20, speed_x: 1, speed_y: 0, x1: 0, x2: GAME_WIDTH - 64, y1: 100, y2: 210 },
+            { x: 176, y: 100, width: 48, height: 20, speed_x: 0, speed_y: 1, x1: 0, x2: GAME_WIDTH - 64, y1: 100, y2: 210 }
+        ],
         enemies: [
             { x: 200, y: 367, dir: DIR_LEFT, x1: 0, x2: GAME_WIDTH - this.SNAIL_WDT },
             { x: 128, y: 319, dir: DIR_RIGHT, x1: 80, x2: GAME_WIDTH - this.SNAIL_WDT }
@@ -100,7 +104,8 @@ game_scene.create = function () {
             { x: 200, y: 224 },
             { x: 150, y: 272 },
             { x: 180, y: 272 }
-        ]
+        ],
+        player: { x: 24, y: 200 }
     };
 
     for (let p of this.level.platforms) {
@@ -112,14 +117,12 @@ game_scene.create = function () {
         this.platforms.push(platform);
     }
 
-    let mov1 = this.spawn_moving_platform(80, 64, 64, 20, 1, 0, 0, GAME_WIDTH - 64, 100, 210);
-    this.add(mov1);
-    this.platforms.push(mov1);
+    for (let c of this.level.carriers) {
+        let carrier = this.spawn_moving_platform(c.x, c.y, c.width, c.height, c.speed_x, c.speed_y, c.x1, c.x2, c.y1, c.y2);
+        this.add(carrier);
+        this.platforms.push(carrier);
+    }
 
-
-    mov1 = this.spawn_moving_platform(176, 100, 48, 20, 0, 1, 0, GAME_WIDTH - 64, 100, 210);
-    this.add(mov1);
-    this.platforms.push(mov1);
 }
 
 game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
@@ -183,7 +186,8 @@ game_scene.player_init = function () {
     this.player.vy = 0;
     this.player.jumping = false;
     this.player.doubleJump = false;
-    this.player.position(24, this.platforms[this.level.platforms.length - 1].cy - this.player.height);
+    // this.player.position(24, this.platforms[this.level.platforms.length - 1].cy - this.player.height);
+    this.player.position(this.level.player.x, this.level.player.y);
     this.player.setAnim(STATE_IDLE | DIR_RIGHT);
     this.player.isVisible = true;
     this.player.onPlatform = null;
