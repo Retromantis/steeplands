@@ -32,7 +32,7 @@ const STATE_DEAD = 131072;
 // Example: Player is running to left = STATE_RUNNING | DIR_LEFT
 
 // Game states constants
-const GAME_IDLE = -1;
+const GAME_READY = -1;
 const GAME_PLAYING = -2;
 const GAME_PAUSED = -3;
 const GAME_OVER = -4;
@@ -532,7 +532,7 @@ MiSprite.prototype.getFrameHeight = function () {
 
 MiSprite.prototype.setAnimation = function (animation) {
     this.frameAnimLoop = animation.loop;
-    this.frameAnimTag = animation.tag;
+    this.frameAnimTag = animation;
     this.frameAnimIndex = 0;
     if (animation == null) {
         this.frameAnim = new Array(this.frameCount);

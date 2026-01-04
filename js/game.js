@@ -13,7 +13,8 @@ game_scene.preload = function () {
     this.loadImage('snail', 'assets/images/game/snail.png');
     this.loadImage('spikes', 'assets/images/game/spikes.png');
     this.loadImage('gem', 'assets/images/game/gem.png');
-    this.loadImage('dead', 'assets/images/game/dead.png');
+    this.loadImage('burst', 'assets/images/game/burst.png');
+    this.loadImage('zone_cleared', 'assets/images/game/zone_cleared.png');
 }
 
 game_scene.create = function () {
@@ -59,22 +60,30 @@ game_scene.create = function () {
     // this.add(this.spikes);
     this.spikes.position(100, GAME_HEIGHT - this.SPIKES_HGT - 12);
 
-    this.GEM_WDT = 16;
-    this.GEM_HGT = 14;
-    this.GEM_ANIM = { frames: [4, 5, 6, 7], delay: 4, loop: true };
+    this.GEM_WDT = 8;
+    this.GEM_HGT = 10;
+    this.GEM_ANIM = { frames: [0, 1, 1, 2, 2, 2, 1, 1, 0, 0], delay: 0, loop: true };
     // this.GEM_ANIM = { frames: [0, 1, 2, 3], delay: 4, loop: true };
 
-    this.DEAD_WDT = 64;
-    this.DEAD_HGT = 64;
-    this.DEAD_ANIM = { frames: [0, 1, 2, 3], delay: 4, loop: false };
+    this.BURST_WDT = 64;
+    this.BURST_HGT = 64;
+    this.BURST_ANIM_RESPAWN = { frames: [3, 2, 1, 0], delay: 0, loop: false };
+    this.BURST_ANIM_DESPAWN = { frames: [0, 1, 2, 3], delay: 0, loop: false };
 
-    this.dead = new MiSprite(this.getImage('dead'), this.DEAD_WDT, this.DEAD_HGT);
-    this.dead.setAnimation(this.DEAD_ANIM);
-    this.dead.update = function () {
+    this.burst = new MiSprite(this.getImage('burst'), this.BURST_WDT, this.BURST_HGT);
+    this.burst.update = function () {
         this.animate();
     }
-    this.dead.onEndAnimation = function () {
-        game_scene.start();
+    this.burst.onEndAnimation = function (anim) {
+        if (anim === game_scene.BURST_ANIM_DESPAWN) {
+            this.isVisible = false;
+            game_scene.start();
+        } else if (anim === game_scene.BURST_ANIM_RESPAWN) {
+            this.isVisible = false;
+            game_scene.state = GAME_PLAYING;
+            game_scene.player.isVisible = true;
+            game_scene.turn_right();
+        }
     }
 
     this.enemies = [];
@@ -123,6 +132,18 @@ game_scene.create = function () {
         this.platforms.push(carrier);
     }
 
+    this.ZONE_CLEARED_WDT = 128;
+    this.ZONE_CLEARED_HGT = 32;
+    this.ZONE_CLEARED_ANIM = { frames: [0, 1, 0, 1, 0, 1], delay: 8, loop: false };
+    this.zone_cleared = new MiSprite(this.getImage('zone_cleared'), this.ZONE_CLEARED_WDT, this.ZONE_CLEARED_HGT);
+    this.zone_cleared.setAnimation(this.ZONE_CLEARED_ANIM);
+    this.zone_cleared.position((GAME_WIDTH - this.ZONE_CLEARED_WDT) >> 1, 150);
+    this.zone_cleared.update = function () {
+        this.animate();
+    }
+    this.zone_cleared.onEndAnimation = function (anim) {
+        game_scene.start();
+    }
 }
 
 game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed_y, x1, x2, y1, y2) {
@@ -146,9 +167,11 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
 }
 
 game_scene.start = function () {
-    game_scene.state = GAME_IDLE;
+    game_scene.state = GAME_READY;
+
     this.remove(this.player);
-    this.remove(this.dead);
+    this.remove(this.burst);
+    this.remove(this.zone_cleared);
 
     for (let enemy of this.enemies) {
         this.remove(enemy);
@@ -175,8 +198,14 @@ game_scene.start = function () {
     }
 
     this.add(this.player);
-    this.add(this.dead);
-    this.dead.isVisible = false;
+    this.add(this.burst);
+
+    this.burst.position(this.player.x - 16, this.player.y - 16);
+    this.burst.setAnimation(this.BURST_ANIM_RESPAWN);
+    this.burst.isVisible = true;
+
+    this.add(this.zone_cleared);
+    this.zone_cleared.isVisible = false;
 }
 
 game_scene.player_init = function () {
@@ -189,7 +218,7 @@ game_scene.player_init = function () {
     // this.player.position(24, this.platforms[this.level.platforms.length - 1].cy - this.player.height);
     this.player.position(this.level.player.x, this.level.player.y);
     this.player.setAnim(STATE_IDLE | DIR_RIGHT);
-    this.player.isVisible = true;
+    this.player.isVisible = false;
     this.player.onPlatform = null;
 }
 
@@ -243,7 +272,7 @@ game_scene.player_update = function () {
             this.onPlatform = null;
             this.jumping = true;
             if (this.state !== STATE_JUMPING) {
-                console.log("Falling");
+                // console.log("Falling");
                 this.state = STATE_JUMPING;
                 // this.setAnim(this.state | this.dir);
             }
@@ -284,11 +313,14 @@ game_scene.spawn_snail = function (x, y, dir, x1, x2) {
 }
 
 game_scene.snail_update = function () {
+    if (game_scene.state !== GAME_PLAYING) {
+        return;
+    }
     this.animate();
     this.move(this.vx, 0);
 
     if (this.collidesWith(game_scene.player)) {
-        // game_scene.set_state_dead();
+        game_scene.set_state_game_over();
     }
 
     if (this.x < this.bounds.x1) {
@@ -307,7 +339,7 @@ game_scene.spawn_gem = function (x, y) {
 
     gem.position(x, y);
     gem.setAnimation(this.GEM_ANIM);
-    gem.setCollider(1, 3, 10, 9);
+    gem.setCollider(2, 3, 4, 4);
     gem.update = game_scene.gem_update;
 
     return gem;
@@ -326,12 +358,14 @@ game_scene.gem_update = function () {
         if (game_scene.items.length === 0) {
             // Todas las gemas recogidas, reiniciar el nivel
             // game_scene.start();
+            game_scene.zone_cleared.isVisible = true;
+            game_scene.state = GAME_VICTORY;
         }
     }
 }
 
 game_scene.keyDown = function (event) {
-    console.log(event.key + " " + event.code);
+    // console.log(event.key + " " + event.code);
     switch (event.code) {
         case "KeyA":
         case "ArrowLeft":
@@ -456,9 +490,10 @@ game_scene.idle = function () {
     this.player.setAnim(STATE_IDLE | this.player.dir);
 }
 
-game_scene.set_state_dead = function () {
-    this.state = STATE_DEAD;
+game_scene.set_state_game_over = function () {
+    this.state = GAME_OVER;
     this.player.isVisible = false;
-    this.dead.position(this.player.x - 16, this.player.y - 16);
-    this.dead.isVisible = true;
+    this.burst.position(this.player.x - 16, this.player.y - 16);
+    this.burst.setAnimation(this.BURST_ANIM_DESPAWN);
+    this.burst.isVisible = true;
 }
