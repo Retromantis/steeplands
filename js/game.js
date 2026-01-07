@@ -90,33 +90,43 @@ game_scene.create = function () {
     this.items = [];
     this.platforms = [];
 
-    this.level = {
-        platforms: [
-            { x: 24, y: 32, width: 48, height: 20 },
-            { x: 80, y: 160, width: 64, height: 20 },
-            { x: 0, y: 176, width: 48, height: 20 },
-            { x: 80, y: 208, width: 64, height: 48 },
-            { x: 176, y: 240, width: 48, height: 20 },
-            { x: 144, y: 288, width: 64, height: 20 },
-            { x: -16, y: 384, width: 128, height: 20 },
-            { x: 156, y: 384, width: 128, height: 20 }
-        ],
-        carriers: [
-            { x: 80, y: 64, width: 64, height: 20, speed_x: 1, speed_y: 0, x1: 0, x2: GAME_WIDTH - 64, y1: 100, y2: 210 },
-            { x: 176, y: 100, width: 48, height: 20, speed_x: 0, speed_y: 1, x1: 0, x2: GAME_WIDTH - 64, y1: 100, y2: 210 }
-        ],
-        enemies: [
-            { x: 200, y: 367, dir: DIR_LEFT, x1: 0, x2: GAME_WIDTH - this.SNAIL_WDT },
-            { x: 128, y: 319, dir: DIR_RIGHT, x1: 80, x2: GAME_WIDTH - this.SNAIL_WDT }
-        ],
-        items: [
-            { x: 200, y: 224 },
-            { x: 150, y: 272 },
-            { x: 180, y: 272 }
-        ],
-        player: { x: 24, y: 200 }
-    };
+    this.maxLevel = Constants.LEVELS.length - 1;
+    this.currentLevel = 0;
 
+    this.level = Constants.LEVELS[this.currentLevel];
+
+    this.spawn_platforms();
+
+    this.ZONE_CLEARED_WDT = 128;
+    this.ZONE_CLEARED_HGT = 32;
+    this.ZONE_CLEARED_ANIM = { frames: [0, 1, 0, 1, 0, 1], delay: 8, loop: false };
+    this.zone_cleared = new MiSprite(this.getImage('zone_cleared'), this.ZONE_CLEARED_WDT, this.ZONE_CLEARED_HGT);
+    this.zone_cleared.position((GAME_WIDTH - this.ZONE_CLEARED_WDT) >> 1, 150);
+    this.zone_cleared.update = function () {
+        this.animate();
+    }
+    this.zone_cleared.onEndAnimation = function (anim) {
+        game_scene.update_scene();
+    }
+}
+
+game_scene.update_scene = function () {
+    console.log("Level cleared! Loading next level..." + this.level.platforms.length);
+    for (let p of this.platforms) {
+        this.remove(p);
+    }
+            
+    this.platforms = [];
+    this.currentLevel++;
+    if (this.currentLevel > this.maxLevel) {
+        this.currentLevel = 0;
+    }
+    this.level = Constants.LEVELS[this.currentLevel];
+    this.spawn_platforms();
+    this.start();
+}
+
+game_scene.spawn_platforms = function () {
     for (let p of this.level.platforms) {
         let platform = new MiSprite(this.getImage('platform'), p.width, p.height);
         platform.setCollider(0, 4, p.width, 10);
@@ -125,24 +135,10 @@ game_scene.create = function () {
         this.add(platform);
         this.platforms.push(platform);
     }
-
     for (let c of this.level.carriers) {
         let carrier = this.spawn_moving_platform(c.x, c.y, c.width, c.height, c.speed_x, c.speed_y, c.x1, c.x2, c.y1, c.y2);
         this.add(carrier);
         this.platforms.push(carrier);
-    }
-
-    this.ZONE_CLEARED_WDT = 128;
-    this.ZONE_CLEARED_HGT = 32;
-    this.ZONE_CLEARED_ANIM = { frames: [0, 1, 0, 1, 0, 1], delay: 8, loop: false };
-    this.zone_cleared = new MiSprite(this.getImage('zone_cleared'), this.ZONE_CLEARED_WDT, this.ZONE_CLEARED_HGT);
-    this.zone_cleared.setAnimation(this.ZONE_CLEARED_ANIM);
-    this.zone_cleared.position((GAME_WIDTH - this.ZONE_CLEARED_WDT) >> 1, 150);
-    this.zone_cleared.update = function () {
-        this.animate();
-    }
-    this.zone_cleared.onEndAnimation = function (anim) {
-        game_scene.start();
     }
 }
 
@@ -155,6 +151,9 @@ game_scene.spawn_moving_platform = function (x, y, width, height, speed_x, speed
     platform.vy = speed_y;
     platform.bounds = { x1: x1, x2: x2, y1: y1, y2: y2 };
     platform.update = function () {
+        if (game_scene.state !== GAME_PLAYING) {
+            return;
+        }
         this.move(this.vx, this.vy);
         if (this.y < (this.bounds.y1 + game_scene.y) || this.y > (this.bounds.y2 + game_scene.y)) {
             this.vy = -this.vy;
@@ -205,6 +204,7 @@ game_scene.start = function () {
     this.burst.isVisible = true;
 
     this.add(this.zone_cleared);
+    this.zone_cleared.setAnimation(this.ZONE_CLEARED_ANIM);
     this.zone_cleared.isVisible = false;
 }
 
@@ -223,6 +223,9 @@ game_scene.player_init = function () {
 }
 
 game_scene.player_update = function () {
+    if (game_scene.state !== GAME_PLAYING) {
+        return;
+    }
     this.animate();
     if (this.onPlatform !== null) {
         this.move(this.onPlatform.vx, this.onPlatform.vy);
@@ -357,11 +360,27 @@ game_scene.gem_update = function () {
         }
         if (game_scene.items.length === 0) {
             // Todas las gemas recogidas, reiniciar el nivel
-            // game_scene.start();
-            game_scene.zone_cleared.isVisible = true;
-            game_scene.state = GAME_VICTORY;
+            game_scene.set_state_game_victory();
         }
     }
+}
+
+game_scene.set_state_game_victory = function () {
+    this.zone_cleared.isVisible = true;
+    this.state = GAME_VICTORY;
+
+    // for (let p of this.level.platforms) {
+    //     this.remove(p);
+    //     this.platforms.shift();
+    // }
+            
+    // this.platforms = [];
+    // this.currentLevel++;
+    // if (this.currentLevel > this.maxLevel) {
+    //     this.currentLevel = 0;
+    // }
+    // this.level = Constants.LEVELS[this.currentLevel];
+    // this.spawn_platforms();
 }
 
 game_scene.keyDown = function (event) {
